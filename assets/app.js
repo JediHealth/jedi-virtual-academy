@@ -9,10 +9,11 @@ const lerp=(a,b,t)=>a+(b-a)*t;
 const TAU=Math.PI*2;
 
 /* ---------------------------- 状态 ---------------------------- */
-const DEF={v:1,started:false,name:'',path:2,xp:0,intro:false,met:false,breath:false,regions:[],quiz:-1,joint:-1,balance:-1,shards:[],grad:false};
+const DEF={v:1,started:false,name:'',path:2,xp:0,intro:false,met:false,breath:false,regions:[],quiz:-1,joint:-1,balance:-1,shards:[],grad:false,rehab:[],rehabMet:false};
 let S=Object.assign({},DEF);
 try{const r=JSON.parse(localStorage.getItem('jva_v1')||'null');if(r&&r.v===1)S=Object.assign({},DEF,r)}catch(e){}
 let storeOK=true;try{localStorage.setItem('jva_t','1');localStorage.removeItem('jva_t')}catch(e){storeOK=false}
+S.rehab=(S.rehab||[]).slice();
 const save=()=>{try{localStorage.setItem('jva_v1',JSON.stringify(S))}catch(e){storeOK=false}};
 const rankOf=xp=>{let i=0;RANKS.forEach((r,j)=>{if(xp>=r.xp)i=j});return i};
 const hallOK=()=>S.quiz>=3, trainOK=()=>S.joint>=4||S.balance>=50;
@@ -35,7 +36,7 @@ const DECO=[];
 function segDist(px,py,a,b){const dx=b[0]-a[0],dy=b[1]-a[1];const t=clamp(((px-a[0])*dx+(py-a[1])*dy)/(dx*dx+dy*dy),0,1);return Math.hypot(px-a[0]-dx*t,py-a[1]-dy*t)}
 const STARS=Array.from({length:110},()=>({x:rnd(),y:rnd()*.9,s:.5+rnd()*1.4,p:rnd()*TAU}));
 const NPCS=Array.from({length:5},(_,i)=>({x:700+rnd()*400,y:1000+rnd()*400,tx:null,ty:null,wait:rnd()*4,path:i%3,name:NAMES[(i*3+11)%NAMES.length],face:1,moving:false,ph:rnd()*9}));
-const OBST=[{x:900,y:1250,r:52},{x:430,y:620,r:50},{x:1370,y:620,r:44},{x:1050,y:1110,r:30}];
+const OBST=[{x:900,y:1250,r:52},{x:430,y:620,r:50},{x:1370,y:620,r:44},{x:1050,y:1110,r:30},{x:900,y:390,r:50}];
 
 /* ---------------------------- 画布 ---------------------------- */
 const cv=$('#world'),G0=cv.getContext('2d');let g=G0;
@@ -93,7 +94,7 @@ function drawGround(){
     g.globalAlpha=.22;g.lineWidth=2;ell(z.x,z.y,z.r*.72,z.r*.72);g.stroke();ell(z.x,z.y,z.r*.42,z.r*.42);g.stroke();
     g.globalAlpha=.5;g.lineWidth=4;g.setLineDash([z.r*.72*TAU/n*.5,z.r*.72*TAU/n*.5]);g.lineDashOffset=T*14;ell(z.x,z.y,z.r*.86,z.r*.86);g.stroke();g.setLineDash([]);g.globalAlpha=1;
   };
-  floor(ZONES.plaza,'#1d4450',16);floor(ZONES.hall,'#262b52',24);floor(ZONES.train,'#3a3327',12);
+  floor(ZONES.plaza,'#1d4450',16);floor(ZONES.hall,'#262b52',24);floor(ZONES.train,'#3a3327',12);floor(ZONES.rehab,'#1b3352',18);
   // 特训场地标线
   const t=ZONES.train;g.strokeStyle='rgba(255,196,107,.3)';g.lineWidth=2;
   g.beginPath();g.moveTo(t.x-t.r*.7,t.y);g.lineTo(t.x+t.r*.7,t.y);g.moveTo(t.x,t.y-t.r*.7);g.lineTo(t.x,t.y+t.r*.7);g.stroke();
@@ -190,6 +191,19 @@ function drawHolo(){
   g.beginPath();g.arc(0,hip-44,8,0,TAU);g.stroke();
   zlabel(ZONES.train.zh,ZONES.train.en,-170,'#ffd691');
 }
+function drawRehab(){ // 运动康复馆：光拱 + 全息上半身（头颈缓慢侧屈）
+  g.fillStyle='#142a44';ell(0,0,50,50*K);g.fill();g.strokeStyle='#7fd0ff';g.lineWidth=3;g.stroke();
+  glow(0,-84,150,'rgba(127,208,255,.7)',.26);
+  g.lineCap='round';g.strokeStyle='rgba(170,225,255,.8)';g.lineWidth=3.5;g.beginPath();g.ellipse(0,0,112,172,0,Math.PI,TAU);g.stroke();
+  g.strokeStyle='rgba(170,225,255,.38)';g.lineWidth=2.5;g.beginPath();g.ellipse(0,0,50,172,0,Math.PI,TAU);g.stroke();
+  g.setLineDash([5,12]);g.lineDashOffset=T*18;g.beginPath();g.ellipse(0,-172,64,14,0,0,TAU);g.stroke();g.setLineDash([]);
+  for(const s of[-1,1]){g.fillStyle='#24486b';rr(s*112-7,-14,14,14,3);g.fill();glow(s*112,-18,16,'#bfe6ff',.6+.3*Math.sin(T*2.4+s))}
+  const a=Math.sin(T*1.1)*.42,nx=Math.sin(a*.5)*11,ny=-76,hx=nx+Math.sin(a)*15,hy=ny-Math.cos(a)*15;
+  g.strokeStyle='rgba(200,238,255,'+(.8+.15*Math.sin(T*16))+')';g.lineWidth=4;
+  g.beginPath();g.moveTo(-32,-30);g.quadraticCurveTo(-31,-58,0,-62);g.quadraticCurveTo(31,-58,32,-30);g.moveTo(0,-62);g.lineTo(nx,ny);g.stroke();
+  g.beginPath();g.arc(hx,hy,13,0,TAU);g.stroke();
+  zlabel(ZONES.rehab.zh,ZONES.rehab.en,-212,'#bfe6ff');
+}
 function drawGate(){
   for(const sx of[-1,1]){g.save();g.translate(sx*92,0);g.fillStyle='rgba(0,0,0,.3)';ell(0,0,18,6);g.fill();
     const gr=g.createLinearGradient(0,-130,0,0);gr.addColorStop(0,'#3b6c7c');gr.addColorStop(1,'#152a38');g.fillStyle=gr;
@@ -219,12 +233,14 @@ function objective(){
   if(!S.intro)return HS[0];
   if(S.quiz<0||!hallOK())return HS[2];
   if(!trainOK())return HS[3];
+  if(!S.rehab.length)return HS[4];
   return null;
 }
 function guideText(){
   if(!S.intro)return '前往 <b>原力之井</b>，聆听学院缘起';
   if(!hallOK())return '前往 <b>脊骨神经殿堂</b>，完成殿堂试炼';
   if(!trainOK())return '前往 <b>绝地特训场</b>，完成一次特训';
+  if(!S.rehab.length)return '新开放：前往正北方的 <b>运动康复馆</b>';
   return '第一阶修习已完成 · 自由探索，收集 <b>知识晶石</b> '+S.shards.length+'/'+SHARDS.length;
 }
 
@@ -235,7 +251,7 @@ function draw(){
   for(let i=0;i<7;i++){const a=Math.PI*(1.08+i*.84/6);L.push({y:hz.y+Math.sin(a)*185,x:hz.x+Math.cos(a)*185,f:()=>drawColumn(120+(i===3?30:i%2*12))})}
   for(const a of[.22,.78]){const an=Math.PI*a;L.push({y:hz.y+Math.sin(an)*185,x:hz.x+Math.cos(an)*185,f:()=>drawColumn(60)})}
   for(let i=0;i<4;i++){const a=Math.PI/4+i*Math.PI/2;L.push({x:tz.x+Math.cos(a)*195,y:tz.y+Math.sin(a)*195,f:()=>drawPylon(i)})}
-  L.push({x:900,y:1250,f:drawCore},{x:430,y:620,f:drawSpinePillar},{x:1370,y:620,f:drawHolo},{x:900,y:1690,f:drawGate},{x:1050,y:1110,f:drawMentor});
+  L.push({x:900,y:1250,f:drawCore},{x:430,y:620,f:drawSpinePillar},{x:1370,y:620,f:drawHolo},{x:900,y:390,f:drawRehab},{x:900,y:1690,f:drawGate},{x:1050,y:1110,f:drawMentor});
   DECO.forEach(o=>L.push({x:o.x,y:o.y,f:()=>drawTree(o)}));
   SHARDS.forEach((s,i)=>L.push({x:s.x,y:s.y,f:()=>drawShard(i)}));
   NPCS.forEach(n=>L.push({x:n.x,y:n.y,f:()=>{const p=PATHS[n.path];drawChar(p.c,p.d,n.moving,n.face,T+n.ph,.92,.8);nameTag(n.name,-66,'#b8c9d4',.75)}}));
@@ -267,7 +283,8 @@ function update(dt){
     }
     const sp=270;const m=Math.hypot(vx,vy);P.moving=m>0;
     if(m>0){P.x+=vx/m*sp*dt;P.y+=vy/m*sp*dt;if(Math.abs(vx)>.15)P.face=vx>0?1:-1;
-      for(const o of OBST){const dx=P.x-o.x,dy=P.y-o.y,d=Math.hypot(dx,dy)||1;if(d<o.r){P.x=o.x+dx/d*o.r;P.y=o.y+dy/d*o.r}}
+      for(const o of OBST){let dx=P.x-o.x,dy=P.y-o.y,d=Math.hypot(dx,dy)||1;if(d<o.r){ // 碰到障碍：沿切线滑过去，避免正对着走时卡住
+        const tx=-dy/d,ty=dx/d,sgn=(tx*vx+ty*vy)>=-.001?1:-1;dx+=tx*sgn*sp*dt;dy+=ty*sgn*sp*dt;d=Math.hypot(dx,dy)||1;P.x=o.x+dx/d*o.r;P.y=o.y+dy/d*o.r}}
       if(!inIsle(P))P.tx=null;
       if(!hintGone){hintGone=true;setTimeout(()=>$('#hint').style.opacity=0,1500)}
     }
@@ -279,7 +296,7 @@ function update(dt){
     if(pending&&near===pending&&!busy()){const p=pending;pending=null;P.tx=null;interact(p)}
   }
   for(const n of NPCS){
-    if(n.tx==null){n.wait-=dt;n.moving=false;if(n.wait<=0){const z=Object.values(ZONES)[Math.floor(Math.random()*3)],a=Math.random()*TAU,d=70+Math.random()*(z.r-40);n.tx=z.x+Math.cos(a)*d;n.ty=z.y+Math.sin(a)*d}}
+    if(n.tx==null){n.wait-=dt;n.moving=false;if(n.wait<=0){const z=Object.values(ZONES)[Math.floor(Math.random()*4)],a=Math.random()*TAU,d=70+Math.random()*(z.r-40);n.tx=z.x+Math.cos(a)*d;n.ty=z.y+Math.sin(a)*d}}
     else{const dx=n.tx-n.x,dy=n.ty-n.y,d=Math.hypot(dx,dy);if(d<6){n.tx=null;n.wait=3+Math.random()*7}else{n.x+=dx/d*120*dt;n.y+=dy/d*120*dt;n.moving=true;if(Math.abs(dx)>4)n.face=dx>0?1:-1}}
   }
 }
@@ -346,7 +363,7 @@ const on=(sel,fn)=>{const el=$('#pbody').querySelector(sel);if(el)el.addEventLis
 
 function interact(h){
   if(busy())return;
-  if(h.id==='core')core();else if(h.id==='mentor')mentor();else if(h.id==='spine')hall();else if(h.id==='train')training();
+  if(h.id==='core')core();else if(h.id==='mentor')mentor();else if(h.id==='spine')hall();else if(h.id==='train')training();else if(h.id==='rehab')Rehab.enter();
   else if(h.shard!=null){S.shards.push(h.shard);save();near=null;$('#act').hidden=true;
     openPanel('知识晶石','Knowledge Shard · '+S.shards.length+' / '+SHARDS.length,'<p class="lead" style="font-size:17px;line-height:1.9">'+SHARDS[h.shard].t+'</p><div class="row"><button class="btn" id="ok">收入行囊</button></div>');
     on('#ok',closePanel);addXP(10,'拾得知识晶石')}
@@ -547,7 +564,7 @@ function nextStepText(){
   if(!S.intro)return '先去广场中央的原力之井吧，学院的缘起在那里。';
   if(!hallOK())return '沿着西北方向的光路走，去脊骨神经殿堂，认识脊柱并完成殿堂试炼。';
   if(!trainOK())return '东北方向是绝地特训场。去完成一项特训，把知识变成身体的感觉。';
-  return S.shards.length<SHARDS.length?'第一阶你已完成。学院里还有 '+(SHARDS.length-S.shards.length)+' 枚知识晶石等你发现——试试岛的边缘和最北端。':'你已走遍学院。新的殿堂正在建造中，敬请期待第二阶段。';
+  return S.shards.length<SHARDS.length?'第一阶你已完成。学院里还有 '+(SHARDS.length-S.shards.length)+' 枚知识晶石等你发现——试试岛的边缘。也别忘了正北方的运动康复馆。':'你已走遍学院。新的殿堂正在建造中，敬请期待第二阶段。';
 }
 function askPanel(){
   openPanel('澄一导师','Mentor · 预设知识引导',
@@ -574,6 +591,7 @@ function mapPanel(){
   row(0,ZONES.plaza,'原',(S.intro?'已聆听缘起':'尚未聆听缘起')+' · '+(S.breath?'已完成静心呼吸':'静心呼吸未完成'))+
   row(2,ZONES.hall,'脊','已认识 '+S.regions.length+' / 5 段 · '+(S.quiz<0?'试炼未开始':'试炼最佳 '+S.quiz+' / 5'+(hallOK()?' ✓':'')))+
   row(3,ZONES.train,'训',(S.joint<0?'关节的角色 未开始':'关节的角色 '+S.joint+' / 6')+' · '+(S.balance<0?'重心控制 未开始':'重心控制 '+S.balance+'%'))+
+  row(4,ZONES.rehab,'康','颈椎动作 已学习 '+S.rehab.length+' / '+REHAB_REGIONS[0].exercises.length+' · 内容审核中')+
   '<div class="zone" style="--c:#c9c0ff"><div class="g">晶</div><div class="t"><b>知识晶石</b><span>已拾得 '+S.shards.length+' / '+SHARDS.length+' · 散落在学院各处</span></div></div>'+
   '<p class="note">身边走动的其他学徒是模拟角色，用于营造同修氛围；当前版本没有真实的多人联机。</p>'+
   '<div class="row"><button class="btn ghost sm" id="rs">重置全部进度</button></div>');
@@ -601,7 +619,7 @@ function start(){
 $('#go').addEventListener('click',()=>{$('#title').hidden=true;$('#choose').hidden=false;mode='choose';buildPaths()});
 $('#reroll').addEventListener('click',()=>{let n;do{n=NAMES[Math.floor(Math.random()*NAMES.length)]}while(n===pname);pname=n;$('#nm').textContent=n});
 $('#enter').addEventListener('click',()=>{
-  S=Object.assign({},DEF,{started:true,name:pname,path:pick,regions:[],shards:[]});save();start();
+  S=Object.assign({},DEF,{started:true,name:pname,path:pick,regions:[],shards:[],rehab:[]});save();start();
   P.tx=900;P.ty=1570;
   setTimeout(()=>say(['欢迎，'+S.name+'。你已穿过学院之门。','我是澄一，学院的引路人。点击地面即可行走；靠近发光的地方，就能与之互动。','沿着光路向前，到广场中央的原力之井来。我在井边等你。']),700);
 });
