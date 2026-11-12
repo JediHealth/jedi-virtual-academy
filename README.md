@@ -2,7 +2,14 @@
 
 JediHealth 数字学院。纯静态网页：无构建、无服务器、无外部依赖，任何静态托管都能直接运行。
 
-线上稳定版 **1.0.1**（`main` / `gh-pages` 分支）。开发中 **1.1 预览**（`v1.1-dev` 分支）：新增第四个区域“绝地运动康复馆”，首批开放颈椎四个动作的动态演示。1.1 的专业内容尚在审核，审核通过前不合并到 `main`、不发布到线上。
+线上版本 **1.1.0**：在原有学院上新增第四个区域“绝地运动康复馆”，首批开放颈椎四个动作的动态演示。四个动作的专业内容目前是**待专业审核的体验内容**，界面上有明确标注。
+
+学院始终使用同一个正式网址，在原有基础上持续升级。每次升级前保留上一版：
+
+| 版本 | 回退分支 | 单文件存档（线上可直接打开） |
+|---|---|---|
+| 1.0 | — | `archive/v1.0/` |
+| 1.0.1 | `release/v1.0.1` | `archive/v1.0.1/` |
 
 ## 目录
 
@@ -19,7 +26,7 @@ assets/rehab/           运动康复馆（1.1）
   player.js             播放器：时间轴插值、播放 / 暂停 / 慢放
   hall.js               康复馆界面
   rehab.css             康复馆样式
-archive/v1.0/           1.0 原始单文件版本
+archive/                历史版本的单文件存档（v1.0、v1.0.1）
 tests/e2e.js            原有三个区域的端到端回归
 tests/rehab.js          康复馆回归
 tools/build-single.py   合并成单文件（离线发送 / 私有预览用）
@@ -60,11 +67,11 @@ python3 -m http.server 8000     # 然后打开 http://localhost:8000
 
 进度存在访问者浏览器的 localStorage（键 `jva_v1`）。同一浏览器再次访问可继续；微信与 Safari 各存各的；换设备不同步。账号与云端同步属于后续阶段。
 
-## 1.1 发布流程
+## 升级与回退
 
-1. 在 `v1.1-dev` 上开发；用 `python3 tools/build-single.py preview.html` 生成单文件做私有预览。
-2. 专业内容逐项审核；通过的把 `library.js` / `dosage.js` 中对应的 `review` 改为 `approved`。
-3. 审核完成后：把版本号改为 `1.1.0`，合并到 `main`，再推送 `main` 到 `gh-pages` 上线。
+- 升级：在开发分支上改 → 跑两个回归测试 → 从当前 `main` 建 `release/v当前版本号` 分支并存一份单文件到 `archive/` → 改版本号 → 合并到 `main` → `git push origin main main:gh-pages`。
+- 回退：`git push -f origin release/v1.0.1:gh-pages`，线上一两分钟后回到该版本（`main` 不受影响）。
+- 专业内容审核通过后，把 `library.js` / `dosage.js` 中对应的 `review` 改为 `approved`，并去掉 `hall.js` 里的审核横幅。
 
 ## 后续扩展的落点
 

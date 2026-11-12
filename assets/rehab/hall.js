@@ -5,7 +5,7 @@ const Rehab=(function(){
 const esc=s=>String(s).replace(/[<>&]/g,'');
 const tag=src=>'<i class="src s-'+src+'" title="'+REHAB_SRC[src].full+'">'+REHAB_SRC[src].zh+'</i>';
 const li=x=>'<li>'+x.t+' '+tag(x.src)+'</li>';
-const banner='<div class="rv"><b>预览版 · 专业内容审核中</b>　演示用于帮助理解动作，不是个体化的运动处方。</div>';
+const banner='<div class="rv"><b>体验内容 · 专业审核中</b>　演示用于帮助理解动作，不是个体化的运动处方。</div>';
 const neck=()=>REHAB_REGIONS.find(r=>r.id==='neck');
 const seen=id=>S.rehab.indexOf(id)>=0;
 
