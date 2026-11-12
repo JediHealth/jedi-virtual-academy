@@ -23,11 +23,13 @@ python3 -m http.server 8000     # 然后打开 http://localhost:8000
 
 注意：把 html 文件直接通过微信发给手机是打不开的（微信的文件预览不执行脚本），必须通过网址访问。
 
-## 部署（GitHub Pages）
+## 线上地址与部署（GitHub Pages）
 
-1. 仓库 Settings → Pages → Source 选 “Deploy from a branch”，分支 `main`，目录 `/ (root)`。
-2. 之后每次 `git push` 到 `main`，一两分钟后线上自动更新。
-3. 地址：`https://<账号>.github.io/<仓库名>/`
+线上地址：https://jedihealth.github.io/jedi-virtual-academy/
+
+- 网站从 `gh-pages` 分支发布；`main` 是开发主线。
+- 发布：把 `main` 推到 `gh-pages`（`git push origin main:gh-pages`），一两分钟后线上自动更新。
+- 想简化成“推 main 即发布”：在仓库 Settings → Pages 把来源分支改为 `main` / `(root)`。
 
 ## 更新内容
 
